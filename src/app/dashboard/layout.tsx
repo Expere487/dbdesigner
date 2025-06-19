@@ -1,6 +1,6 @@
 import { Inter, Geist_Mono } from "next/font/google";
-import { ThemeProvider } from "../providers/theme-provider";
-import "./globals.css";
+import { ThemeProvider } from "@/providers/theme-provider";
+import "@/app/globals.css";
 import Header from "@/components/header";
 import { createClient } from "@/lib/supabase/server";
 
@@ -14,12 +14,15 @@ const fontMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export default async function RootLayout({
+export default async function DashboardLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -32,6 +35,7 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <Header />
           {children}
         </ThemeProvider>
       </body>

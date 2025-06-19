@@ -78,18 +78,78 @@ function TableNode({ data, id, selected }: NodeProps<TableNodeType>) {
                 </Tooltip>
               </div>
 
-              {/* Field handles */}
-              {((field.isPrimary && sourceConnections.includes(field.name)) ||
-                (field.isForeign &&
-                  targetConnections.includes(field.name))) && (
-                  <Handle
-                    type={field.isPrimary ? "source" : "target"}
-                    position={field.isPrimary ? Position.Left : Position.Right}
-                    id={field.name}
-                    className="size-2.5 rounded-full bg-foreground! border-2 border-background"
-                    isConnectable={false}
-                  />
+              {/* Eski format handle (mevcut edge'ler için) - Primary key'ler için source */}
+              {field.isPrimary && (
+                <Handle
+                  type="source"
+                  position={Position.Left}
+                  id={field.name}
+                  className="size-3 rounded-full bg-blue-500 border-2 border-background z-10"
+                  isConnectable={true}
+                  style={{ left: -6 }}
+                />
+              )}
+
+              {/* Eski format handle (mevcut edge'ler için) - Foreign key'ler için target */}
+              {field.isForeign && (
+                <Handle
+                  type="target"
+                  position={Position.Right}
+                  id={field.name}
+                  className="size-3 rounded-full bg-green-500 border-2 border-background z-10"
+                  isConnectable={true}
+                  style={{ right: -6 }}
+                />
+              )}
+
+              {/* Yeni format handle'ları (yeni bağlantılar için) - Her sütun için source */}
+              <Handle
+                type="source"
+                position={Position.Left}
+                id={`${field.name}-source`}
+                className={cn(
+                  "size-3 rounded-full border-2 border-background transition-all duration-200 z-10",
+                  field.isPrimary 
+                    ? "opacity-0" // Primary key'lerde gizli çünkü eski handle var
+                    : "opacity-0 group-hover:opacity-100 bg-blue-400 hover:bg-blue-600 hover:scale-110"
                 )}
+                isConnectable={true}
+                style={{ left: -6 }}
+              />
+
+              {/* Yeni format handle'ları (yeni bağlantılar için) - Her sütun için target */}
+              <Handle
+                type="target"
+                position={Position.Right}
+                id={`${field.name}-target`}
+                className={cn(
+                  "size-3 rounded-full border-2 border-background transition-all duration-200 z-10",
+                  field.isForeign 
+                    ? "opacity-0" // Foreign key'lerde gizli çünkü eski handle var
+                    : "opacity-0 group-hover:opacity-100 bg-green-400 hover:bg-green-600 hover:scale-110"
+                )}
+                isConnectable={true}
+                style={{ right: -6 }}
+              />
+
+              {/* Test için her sütunda görünür handle'lar */}
+              <Handle
+                type="source"
+                position={Position.Left}
+                id={`${field.name}-test-source`}
+                className="size-4 rounded-full bg-red-500 border-2 border-white z-20 shadow-lg"
+                isConnectable={true}
+                style={{ left: -8 }}
+              />
+
+              <Handle
+                type="target"
+                position={Position.Right}
+                id={`${field.name}-test-target`}
+                className="size-4 rounded-full bg-purple-500 border-2 border-white z-20 shadow-lg"
+                isConnectable={true}
+                style={{ right: -8 }}
+              />
             </div>
           </div>
         ))}

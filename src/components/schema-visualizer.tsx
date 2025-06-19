@@ -10,6 +10,10 @@ import {
   Panel,
   useReactFlow,
   BackgroundVariant,
+  addEdge,
+  Connection,
+  Edge,
+  ConnectionMode,
 } from "@xyflow/react";
 import "@xyflow/react/dist/base.css";
 import { RiAddLine, RiSubtractLine, RiFullscreenLine } from "@remixicon/react";
@@ -17,6 +21,7 @@ import { Button } from "@/components/button";
 import TableNode from "@/components/table-node";
 import SchemaEdge from "@/components/schema-edge";
 import { initialNodes, initialEdges } from "@/lib/schema-data";
+import { Plus, ZoomIn, ZoomOut } from "lucide-react";
 
 // Register custom node types and edge types
 const nodeTypes = {
@@ -33,9 +38,85 @@ function SchemaVisualizerInner() {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { fitView, zoomIn, zoomOut } = useReactFlow();
 
+  // Debug için edges'i console'da göster
+  console.log('Current edges state:', edges);
+  console.log('Current nodes state:', nodes);
+
   const onFitView = useCallback(() => {
     fitView({ padding: 0.2 });
   }, [fitView]);
+
+  // Yeni bağlantı kurulduğunda çalışacak fonksiyon
+  const onConnect = useCallback(
+    (params: Connection) => {
+      console.log('onConnect tetiklendi:', params);
+      
+      // Handle ID'lerinden field adlarını çıkar
+      let sourceHandle = params.sourceHandle || '';
+      let targetHandle = params.targetHandle || '';
+      
+      console.log('Original handles:', { sourceHandle, targetHandle });
+      
+      // Test için basit edge oluştur - handle'ları olduğu gibi kullan
+      const connection: Edge = {
+        ...params,
+        id: `edge-${Date.now()}`,
+        type: "default", // Geçici olarak default type kullan
+        // sourceHandle ve targetHandle'ı olduğu gibi bırak
+        sourceHandle: params.sourceHandle,
+        targetHandle: params.targetHandle,
+      };
+      
+      console.log('Simple test connection:', connection);
+      
+      setEdges((eds) => {
+        const newEdges = addEdge(connection, eds);
+        console.log('New edges after simple add:', newEdges);
+        return newEdges;
+      });
+    },
+    [setEdges]
+  );
+
+  // Bağlantı geçerliliğini kontrol eden fonksiyon
+  const isValidConnection = useCallback((connection: Connection | Edge) => {
+    console.log('isValidConnection çağrıldı:', connection);
+    
+    // Edge tipindeyse Connection'a dönüştür
+    const conn = 'sourceHandle' in connection && 'targetHandle' in connection ? connection : connection as Connection;
+    
+    // Aynı node'a bağlantı yapılmasını engelle
+    if (conn.source === conn.target) {
+      console.log('Aynı node bağlantısı engellendi');
+      return false;
+    }
+    
+    // Handle ID'lerinden field adlarını çıkar
+    let sourceHandle = conn.sourceHandle || '';
+    let targetHandle = conn.targetHandle || '';
+    
+    // Yeni format handle'lardan field adını çıkar
+    if (sourceHandle.endsWith('-source')) {
+      sourceHandle = sourceHandle.replace('-source', '');
+    }
+    if (targetHandle.endsWith('-target')) {
+      targetHandle = targetHandle.replace('-target', '');
+    }
+    
+    // Aynı bağlantının tekrar kurulmasını engelle
+    const existingEdge = edges.find(
+      (edge) =>
+        edge.source === conn.source &&
+        edge.target === conn.target &&
+        edge.sourceHandle === sourceHandle &&
+        edge.targetHandle === targetHandle
+    );
+    
+    const isValid = !existingEdge;
+    console.log('Bağlantı geçerli mi:', isValid);
+    
+    return isValid;
+  }, [edges]);
 
   return (
     <main className="flex-1 flex items-stretch">
@@ -45,11 +126,17 @@ function SchemaVisualizerInner() {
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          isValidConnection={isValidConnection}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           fitView
           minZoom={0.5}
           maxZoom={1}
+          connectionMode={ConnectionMode.Strict}
+          snapToGrid={false}
+          snapGrid={[15, 15]}
+          deleteKeyCode="Delete"
           defaultEdgeOptions={{
             type: "custom",
             className: "opacity-25",
@@ -68,10 +155,25 @@ function SchemaVisualizerInner() {
         >
           <Background variant={BackgroundVariant.Dots} gap={20} size={2} />
 
+          <Panel 
+            position="bottom-center"
+            className="inline-flex -space-x-px rounded-md shadow-xs rtl:space-x-reverse"
+          >
+            <Button
+              variant="outline"
+              size="default"
+              className="bg-primary text-primary-foreground shadow-none focus-visible:z-10 "
+              onClick={() => zoomIn()}
+              aria-label="Zoom in"
+            >
+              <Plus className="" aria-hidden="true" /> Create Table
+            </Button>
+          </Panel>
           <Panel
             position="bottom-right"
             className="inline-flex -space-x-px rounded-md shadow-xs rtl:space-x-reverse"
           >
+
             <Button
               variant="outline"
               size="icon"
@@ -79,7 +181,7 @@ function SchemaVisualizerInner() {
               onClick={() => zoomIn()}
               aria-label="Zoom in"
             >
-              <RiAddLine className="size-5" aria-hidden="true" />
+              <ZoomIn className="size-5" aria-hidden="true" />
             </Button>
             <Button
               variant="outline"
@@ -88,7 +190,7 @@ function SchemaVisualizerInner() {
               onClick={() => zoomOut()}
               aria-label="Zoom out"
             >
-              <RiSubtractLine className="size-5" aria-hidden="true" />
+              <ZoomOut className="size-5" aria-hidden="true" />
             </Button>
             <Button
               variant="outline"

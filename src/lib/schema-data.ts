@@ -107,6 +107,8 @@ export const initialEdges: Edge[] = [
     target: "orders",
     sourceHandle: "id",
     targetHandle: "user_id",
+    type: "custom",
+    className: "opacity-25",
   },
   // Orders to Order Items (one-to-many): orders.id -> order_items.order_id
   {
@@ -115,6 +117,8 @@ export const initialEdges: Edge[] = [
     target: "order_items",
     sourceHandle: "id",
     targetHandle: "order_id",
+    type: "custom",
+    className: "opacity-25",
   },
   // Products to Order Items (one-to-many): products.id -> order_items.product_id
   {
@@ -123,15 +127,19 @@ export const initialEdges: Edge[] = [
     target: "order_items",
     sourceHandle: "id",
     targetHandle: "product_id",
+    type: "custom",
+    className: "opacity-25",
   },
   // Merchants to Products (one-to-many): merchants.id -> products.merchant_id
-  {
-    id: "merchants-products",
-    source: "merchants",
-    target: "products",
-    sourceHandle: "id",
-    targetHandle: "merchant_id",
-  },
+  // {
+  //   id: "merchants-products",
+  //   source: "merchants",
+  //   target: "products",
+  //   sourceHandle: "id",
+  //   targetHandle: "merchant_id",
+  //   type: "custom",
+  //   className: "opacity-25",
+  // },
   // Countries to Users (one-to-many): countries.code -> users.country_code
   {
     id: "countries-users",
@@ -139,6 +147,8 @@ export const initialEdges: Edge[] = [
     target: "users",
     sourceHandle: "code",
     targetHandle: "country_code",
+    type: "custom",
+    className: "opacity-25",
   },
   // Countries to Merchants (one-to-many): countries.code -> merchants.country_code
   {
@@ -147,5 +157,7 @@ export const initialEdges: Edge[] = [
     target: "merchants",
     sourceHandle: "code",
     targetHandle: "country_code",
+    type: "custom",
+    className: "opacity-25",
   },
 ];
