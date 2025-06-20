@@ -16,7 +16,7 @@ import {
   ConnectionMode,
 } from "@xyflow/react";
 import "@xyflow/react/dist/base.css";
-import { RiAddLine, RiSubtractLine, RiFullscreenLine } from "@remixicon/react";
+import { RiAddLine, RiSubtractLine, RiFullscreenLine, RiTableView, RiStickyNoteLine } from "@remixicon/react";
 import { Button } from "@/components/button";
 import TableNode from "@/components/table-node";
 import SchemaEdge from "@/components/schema-edge";
@@ -119,8 +119,8 @@ function SchemaVisualizerInner() {
   }, [edges]);
 
   return (
-    <main className="flex-1 flex items-stretch">
-      <div className="w-full" ref={reactFlowWrapper}>
+    <main className="w-full h-full">
+      <div className="w-full h-full" ref={reactFlowWrapper}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -156,9 +156,27 @@ function SchemaVisualizerInner() {
           <Background variant={BackgroundVariant.Dots} gap={20} size={2} />
 
           <Panel 
-            position="bottom-center"
+            position="top-right"
             className="inline-flex -space-x-px rounded-md shadow-xs rtl:space-x-reverse"
           >
+            <Button
+              variant="outline"
+              size="default"
+              className="bg-primary text-primary-foreground shadow-none focus-visible:z-10 "
+              onClick={() => zoomIn()}
+              aria-label="Zoom in"
+            >
+              <Plus className="" aria-hidden="true" /> Create Table
+            </Button>
+            <Button
+              variant="outline"
+              size="default"
+              className="bg-primary text-primary-foreground shadow-none focus-visible:z-10 "
+              onClick={() => zoomIn()}
+              aria-label="Zoom in"
+            >
+              <Plus className="" aria-hidden="true" /> Create Table
+            </Button>
             <Button
               variant="outline"
               size="default"
@@ -200,6 +218,30 @@ function SchemaVisualizerInner() {
               aria-label="Fit view"
             >
               <RiFullscreenLine className="size-5" aria-hidden="true" />
+            </Button>
+          </Panel>
+          <Panel
+            position="bottom-center"
+            className="inline-flex -space-x-px rounded-md shadow-xs rtl:space-x-reverse"
+          >
+
+            <Button
+              variant="outline"
+              size="icon"
+              className="text-muted-foreground/80 hover:text-muted-foreground rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg w-16 h-10 p-4 focus-visible:z-10 bg-card"
+              onClick={() => zoomIn()}
+              aria-label="Zoom in"
+            >
+              <RiTableView className="size-7" aria-hidden="true" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="text-muted-foreground/80 hover:text-muted-foreground rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg w-16 h-10 p-4 focus-visible:z-10 bg-card"
+              onClick={() => zoomOut()}
+              aria-label="Zoom out"
+            >
+              <RiStickyNoteLine className="size-7" aria-hidden="true" />
             </Button>
           </Panel>
         </ReactFlow>

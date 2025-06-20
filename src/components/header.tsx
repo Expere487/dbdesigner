@@ -12,7 +12,7 @@ import { runAllExamples } from "@/lib/sql-converter-examples";
 export default function Header() {
   return (
     <header className="w-full">
-      <div className="border border-border/80  bg-card/80 backdrop-blur-md h-12 md:h-16 flex justify-between items-center gap-2 px-4 shadow-lg/2">
+      <div className="border border-border/80  bg-background backdrop-blur-md h-12 md:h-16 flex justify-between items-center gap-2 px-4 shadow-lg/2">
         {/* Left area */}
         <div className="flex-1 flex items-center gap-4">
           <Link className="inline-flex" href="/">

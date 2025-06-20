@@ -1,5 +1,5 @@
 import { TableNode } from "@/types/types";
-import type { Node, Edge } from "@xyflow/react";
+import { type Node, type Edge, MarkerType } from "@xyflow/react";
 
 // Define the initial nodes (tables)
 export const initialNodes: TableNode[] = [

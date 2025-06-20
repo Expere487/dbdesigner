@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <div className="min-h-svh flex flex-col">
+    <div className="h-[calc(100svh-3rem)] md:h-[calc(100svh-4rem)] overflow-hidden">
       <SchemaVisualizer />
     </div>
   );
