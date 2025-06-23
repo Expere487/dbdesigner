@@ -1,15 +1,19 @@
-
+"use client"
 import { GalleryVerticalEnd } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { LogoWithoutText } from "./common/Logo"
+import { login } from "@/lib/supabase/auth/action"
+import { useSearchParams } from "next/navigation"
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const searchParams = useSearchParams()
+  const error = searchParams.get('error')
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <form>
@@ -31,6 +35,7 @@ export function LoginForm({
                 Sign up
               </a>
             </div>
+            {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
           <div className="flex flex-col gap-6">
             <div className="grid gap-3">
@@ -38,11 +43,22 @@ export function LoginForm({
               <Input
                 id="email"
                 type="email"
+                name="email"
                 placeholder="m@example.com"
                 required
               />
             </div>
-            <Button type="submit" className="w-full">
+            <div className="grid gap-3">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                name="password"
+                placeholder="m@example.com"
+                required
+              />
+            </div>
+            <Button formAction={login} className="w-full cursor-pointer">
               Login
             </Button>
           </div>

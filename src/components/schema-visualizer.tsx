@@ -22,6 +22,7 @@ import TableNode from "@/components/table-node";
 import SchemaEdge from "@/components/schema-edge";
 import { initialNodes, initialEdges } from "@/lib/schema-data";
 import { Plus, ZoomIn, ZoomOut } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 
 // Register custom node types and edge types
 const nodeTypes = {
@@ -50,13 +51,13 @@ function SchemaVisualizerInner() {
   const onConnect = useCallback(
     (params: Connection) => {
       console.log('onConnect tetiklendi:', params);
-      
+
       // Handle ID'lerinden field adlarını çıkar
       let sourceHandle = params.sourceHandle || '';
       let targetHandle = params.targetHandle || '';
-      
+
       console.log('Original handles:', { sourceHandle, targetHandle });
-      
+
       // Test için basit edge oluştur - handle'ları olduğu gibi kullan
       const connection: Edge = {
         ...params,
@@ -66,9 +67,9 @@ function SchemaVisualizerInner() {
         sourceHandle: params.sourceHandle,
         targetHandle: params.targetHandle,
       };
-      
+
       console.log('Simple test connection:', connection);
-      
+
       setEdges((eds) => {
         const newEdges = addEdge(connection, eds);
         console.log('New edges after simple add:', newEdges);
@@ -81,20 +82,20 @@ function SchemaVisualizerInner() {
   // Bağlantı geçerliliğini kontrol eden fonksiyon
   const isValidConnection = useCallback((connection: Connection | Edge) => {
     console.log('isValidConnection çağrıldı:', connection);
-    
+
     // Edge tipindeyse Connection'a dönüştür
     const conn = 'sourceHandle' in connection && 'targetHandle' in connection ? connection : connection as Connection;
-    
+
     // Aynı node'a bağlantı yapılmasını engelle
     if (conn.source === conn.target) {
       console.log('Aynı node bağlantısı engellendi');
       return false;
     }
-    
+
     // Handle ID'lerinden field adlarını çıkar
     let sourceHandle = conn.sourceHandle || '';
     let targetHandle = conn.targetHandle || '';
-    
+
     // Yeni format handle'lardan field adını çıkar
     if (sourceHandle.endsWith('-source')) {
       sourceHandle = sourceHandle.replace('-source', '');
@@ -102,7 +103,7 @@ function SchemaVisualizerInner() {
     if (targetHandle.endsWith('-target')) {
       targetHandle = targetHandle.replace('-target', '');
     }
-    
+
     // Aynı bağlantının tekrar kurulmasını engelle
     const existingEdge = edges.find(
       (edge) =>
@@ -111,10 +112,10 @@ function SchemaVisualizerInner() {
         edge.sourceHandle === sourceHandle &&
         edge.targetHandle === targetHandle
     );
-    
+
     const isValid = !existingEdge;
     console.log('Bağlantı geçerli mi:', isValid);
-    
+
     return isValid;
   }, [edges]);
 
@@ -155,37 +156,16 @@ function SchemaVisualizerInner() {
         >
           <Background variant={BackgroundVariant.Dots} gap={20} size={2} />
 
-          <Panel 
+          <Panel
             position="top-right"
             className="inline-flex -space-x-px rounded-md shadow-xs rtl:space-x-reverse"
           >
-            <Button
-              variant="outline"
-              size="default"
-              className="bg-primary text-primary-foreground shadow-none focus-visible:z-10 "
-              onClick={() => zoomIn()}
-              aria-label="Zoom in"
-            >
-              <Plus className="" aria-hidden="true" /> Create Table
-            </Button>
-            <Button
-              variant="outline"
-              size="default"
-              className="bg-primary text-primary-foreground shadow-none focus-visible:z-10 "
-              onClick={() => zoomIn()}
-              aria-label="Zoom in"
-            >
-              <Plus className="" aria-hidden="true" /> Create Table
-            </Button>
-            <Button
-              variant="outline"
-              size="default"
-              className="bg-primary text-primary-foreground shadow-none focus-visible:z-10 "
-              onClick={() => zoomIn()}
-              aria-label="Zoom in"
-            >
-              <Plus className="" aria-hidden="true" /> Create Table
-            </Button>
+
+            <ToggleGroup type="single">
+              <ToggleGroupItem value="a">a</ToggleGroupItem>
+              <ToggleGroupItem value="b">a</ToggleGroupItem>
+              <ToggleGroupItem value="c">a</ToggleGroupItem>
+            </ToggleGroup>
           </Panel>
           <Panel
             position="bottom-right"

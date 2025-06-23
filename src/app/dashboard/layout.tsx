@@ -3,6 +3,7 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import "@/app/globals.css";
 import Header from "@/components/header";
 import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
 const fontSans = Inter({
   subsets: ["latin"],
@@ -23,7 +24,9 @@ export default async function DashboardLayout({
   const {
     data: { user },
   } = await supabase.auth.getUser()
-
+  if (!user) {
+    redirect("/login");
+  }
   return (
     <html lang="en" suppressHydrationWarning>
       <body
