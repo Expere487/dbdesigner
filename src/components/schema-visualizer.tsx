@@ -22,7 +22,7 @@ import TableNode from "@/components/table-node";
 import SchemaEdge from "@/components/schema-edge";
 import { initialNodes, initialEdges } from "@/lib/schema-data";
 import { Plus, ZoomIn, ZoomOut } from "lucide-react";
-import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 // Register custom node types and edge types
 const nodeTypes = {
@@ -162,9 +162,8 @@ function SchemaVisualizerInner() {
           >
 
             <ToggleGroup type="single">
-              <ToggleGroupItem value="a">a</ToggleGroupItem>
-              <ToggleGroupItem value="b">a</ToggleGroupItem>
-              <ToggleGroupItem value="c">a</ToggleGroupItem>
+              <ToggleGroupItem value="a">Visual Editor</ToggleGroupItem>
+              <ToggleGroupItem value="c">SQL Editor</ToggleGroupItem>
             </ToggleGroup>
           </Panel>
           <Panel

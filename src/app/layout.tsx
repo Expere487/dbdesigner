@@ -3,6 +3,8 @@ import { ThemeProvider } from "../providers/theme-provider";
 import "./globals.css";
 import Header from "@/components/header";
 import { createClient } from "@/lib/supabase/server";
+import { ModalProvider } from "@/hooks/use-modal";
+import { Toaster } from "@/components/ui/sonner"
 
 const fontSans = Inter({
   subsets: ["latin"],
@@ -32,7 +34,11 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <ModalProvider>
+            {children}
+            <Toaster />
+
+          </ModalProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -8,6 +8,8 @@ import ThemeToggle from "@/components/theme-toggle";
 import { LogoWithoutText } from "./common/Logo";
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 import { runAllExamples } from "@/lib/sql-converter-examples";
+import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuContent, DropdownMenuLabel, DropdownMenuTrigger } from "./dropdown-menu";
+import { signOut } from "@/lib/supabase/auth/action";
 
 export default function Header() {
   return (
@@ -34,10 +36,27 @@ export default function Header() {
           <ThemeToggle />
         </div>
         <div className="flex items-center gap-2">
-          <Avatar className="size-10">
-            <AvatarImage src="https://github.com/shadcn.png" className="rounded-full" />
-            <AvatarFallback>CN</AvatarFallback>
-          </Avatar>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Avatar className="size-10">
+                <AvatarImage src="https://github.com/shadcn.png" className="rounded-full" />
+                <AvatarFallback>CN</AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>Profile</DropdownMenuItem>
+              <DropdownMenuItem>Billing</DropdownMenuItem>
+              <DropdownMenuItem>Team</DropdownMenuItem>
+              <DropdownMenuItem>Subscription</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive" className="cursor-pointer" onClick={() => {
+                signOut()
+              }}>Logout</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
         </div>
       </div>
     </header>
