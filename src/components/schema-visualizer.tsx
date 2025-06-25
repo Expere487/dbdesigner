@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState, useMemo } from "react";
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -14,17 +14,20 @@ import {
   Connection,
   Edge,
   ConnectionMode,
+  ConnectionLineType,
 } from "@xyflow/react";
 import "@xyflow/react/dist/base.css";
 import { RiAddLine, RiSubtractLine, RiFullscreenLine, RiTableView, RiStickyNoteLine } from "@remixicon/react";
 import { Button } from "@/components/button";
 import TableNode from "@/components/table-node";
 import SchemaEdge from "@/components/schema-edge";
+import CreateTableModal from "@/components/modals/CreateTableModal";
 import { initialNodes, initialEdges } from "@/lib/schema-data";
 import { Plus, ZoomIn, ZoomOut } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { TableNode as TableNodeType, Field } from "@/types/types";
 
-// Register custom node types and edge types
+// Register custom node types and edge types - Memoized
 const nodeTypes = {
   tableNode: TableNode,
 };
@@ -33,62 +36,86 @@ const edgeTypes = {
   custom: SchemaEdge,
 };
 
+// Default edge options - Memoized
+const defaultEdgeOptions = {
+  type: "custom",
+  className: "opacity-25",
+};
+
+// Style object - Memoized
+const reactFlowStyle = {
+  "--xy-background-pattern-dots-color-default": "var(--color-border)",
+  "--xy-edge-stroke-width-default": 1.5,
+  "--xy-edge-stroke-default": "var(--color-foreground)",
+  "--xy-edge-stroke-selected-default": "var(--color-foreground)",
+  "--xy-attribution-background-color-default": "transparent",
+} as React.CSSProperties;
+
+// Proactive connection validation options
+const connectionValidationOptions = {
+  // Validation sadece gerekli durumlarda çalışsın
+  checkOnlyVisibleNodes: true,
+};
+
 function SchemaVisualizerInner() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [activeEditor, setActiveEditor] = useState<"visual" | "sql">("visual");
+  const [isCreateTableModalOpen, setIsCreateTableModalOpen] = useState(false);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { fitView, zoomIn, zoomOut } = useReactFlow();
 
-  // Debug için edges'i console'da göster
-  console.log('Current edges state:', edges);
-  console.log('Current nodes state:', nodes);
-
+  // Fit view fonksiyonu - Memoized
   const onFitView = useCallback(() => {
-    fitView({ padding: 0.2 });
+    fitView({ padding: 0.2, duration: 800 });
   }, [fitView]);
 
-  // Yeni bağlantı kurulduğunda çalışacak fonksiyon
+  // Zoom in fonksiyonu - Memoized
+  const handleZoomIn = useCallback(() => {
+    zoomIn({ duration: 200 });
+  }, [zoomIn]);
+
+  // Zoom out fonksiyonu - Memoized
+  const handleZoomOut = useCallback(() => {
+    zoomOut({ duration: 200 });
+  }, [zoomOut]);
+
+  // Editor değişikliği - Memoized
+  const handleEditorChange = useCallback((value: string) => {
+    if (value) {
+      setActiveEditor(value as "visual" | "sql");
+    }
+  }, []);
+
+  // Yeni bağlantı kurulduğunda çalışacak fonksiyon - Optimized
   const onConnect = useCallback(
     (params: Connection) => {
-      console.log('onConnect tetiklendi:', params);
-
       // Handle ID'lerinden field adlarını çıkar
-      let sourceHandle = params.sourceHandle || '';
-      let targetHandle = params.targetHandle || '';
+      const sourceHandle = params.sourceHandle || '';
+      const targetHandle = params.targetHandle || '';
 
-      console.log('Original handles:', { sourceHandle, targetHandle });
-
-      // Test için basit edge oluştur - handle'ları olduğu gibi kullan
+      // Basit edge oluştur - unique ID ile
       const connection: Edge = {
         ...params,
-        id: `edge-${Date.now()}`,
-        type: "default", // Geçici olarak default type kullan
-        // sourceHandle ve targetHandle'ı olduğu gibi bırak
+        id: `edge-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        type: "default",
         sourceHandle: params.sourceHandle,
         targetHandle: params.targetHandle,
+        animated: false, // Animation performansı düşürür
       };
 
-      console.log('Simple test connection:', connection);
-
-      setEdges((eds) => {
-        const newEdges = addEdge(connection, eds);
-        console.log('New edges after simple add:', newEdges);
-        return newEdges;
-      });
+      setEdges((eds) => addEdge(connection, eds));
     },
     [setEdges]
   );
 
-  // Bağlantı geçerliliğini kontrol eden fonksiyon
+  // Bağlantı geçerliliğini kontrol eden fonksiyon - Optimized with early return
   const isValidConnection = useCallback((connection: Connection | Edge) => {
-    console.log('isValidConnection çağrıldı:', connection);
-
     // Edge tipindeyse Connection'a dönüştür
     const conn = 'sourceHandle' in connection && 'targetHandle' in connection ? connection : connection as Connection;
 
-    // Aynı node'a bağlantı yapılmasını engelle
+    // Aynı node'a bağlantı yapılmasını engelle - Early return
     if (conn.source === conn.target) {
-      console.log('Aynı node bağlantısı engellendi');
       return false;
     }
 
@@ -104,20 +131,133 @@ function SchemaVisualizerInner() {
       targetHandle = targetHandle.replace('-target', '');
     }
 
-    // Aynı bağlantının tekrar kurulmasını engelle
-    const existingEdge = edges.find(
+    // Aynı bağlantının tekrar kurulmasını engelle - Optimized search
+    return !edges.some(
       (edge) =>
         edge.source === conn.source &&
         edge.target === conn.target &&
         edge.sourceHandle === sourceHandle &&
         edge.targetHandle === targetHandle
     );
-
-    const isValid = !existingEdge;
-    console.log('Bağlantı geçerli mi:', isValid);
-
-    return isValid;
   }, [edges]);
+
+  // Modal açma fonksiyonu
+  const handleOpenCreateTableModal = useCallback(() => {
+    setIsCreateTableModalOpen(true);
+  }, []);
+
+  // Modal kapatma fonksiyonu
+  const handleCloseCreateTableModal = useCallback(() => {
+    setIsCreateTableModalOpen(false);
+  }, []);
+
+  // Yeni tablo oluşturma fonksiyonu - Modal'dan çağrılacak
+  const handleCreateTable = useCallback((tableName: string, fields: Field[]) => {
+    const tableId = `table-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Canvas merkezinde oluştur
+    const viewport = reactFlowWrapper.current?.getBoundingClientRect();
+    const centerX = viewport ? viewport.width / 2 : 300;
+    const centerY = viewport ? viewport.height / 2 : 200;
+    
+    const newTable: TableNodeType = {
+      id: tableId,
+      type: "tableNode",
+      position: { 
+        x: centerX + (Math.random() - 0.5) * 200, // Merkez etrafında rastgele
+        y: centerY + (Math.random() - 0.5) * 200 
+      },
+      data: {
+        label: tableName,
+        fields: fields,
+      },
+    };
+    
+    setNodes((prev) => [...prev, newTable]);
+    setIsCreateTableModalOpen(false);
+  }, [setNodes]);
+
+  // Yeni not oluşturma fonksiyonu - Memoized
+  const handleCreateNote = useCallback(() => {
+    // Not oluşturma mantığı buraya eklenecek
+    console.log("Note creation not implemented yet");
+  }, []);
+
+  // Memoized panels - Performans için
+  const topRightPanel = useMemo(() => (
+    <Panel
+      position="top-right"
+      className="inline-flex -space-x-px rounded-md shadow-xs rtl:space-x-reverse"
+    >
+      <ToggleGroup type="single" value={activeEditor} onValueChange={handleEditorChange}>
+        <ToggleGroupItem value="visual">Visual Editor</ToggleGroupItem>
+        <ToggleGroupItem value="sql">SQL Editor</ToggleGroupItem>
+      </ToggleGroup>
+    </Panel>
+  ), [activeEditor, handleEditorChange]);
+
+  const bottomRightPanel = useMemo(() => (
+    <Panel
+      position="bottom-right"
+      className="inline-flex -space-x-px rounded-md shadow-xs rtl:space-x-reverse"
+    >
+      <Button
+        variant="outline"
+        size="icon"
+        className="text-muted-foreground/80 hover:text-muted-foreground rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg size-10 focus-visible:z-10 bg-card"
+        onClick={handleZoomIn}
+        aria-label="Zoom in"
+      >
+        <ZoomIn className="size-5" aria-hidden="true" />
+      </Button>
+      <Button
+        variant="outline"
+        size="icon"
+        className="text-muted-foreground/80 hover:text-muted-foreground rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg size-10 focus-visible:z-10 bg-card"
+        onClick={handleZoomOut}
+        aria-label="Zoom out"
+      >
+        <ZoomOut className="size-5" aria-hidden="true" />
+      </Button>
+      <Button
+        variant="outline"
+        size="icon"
+        className="text-muted-foreground/80 hover:text-muted-foreground rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg size-10 focus-visible:z-10 bg-card"
+        onClick={onFitView}
+        aria-label="Fit view"
+      >
+        <RiFullscreenLine className="size-5" aria-hidden="true" />
+      </Button>
+    </Panel>
+  ), [handleZoomIn, handleZoomOut, onFitView]);
+
+  const bottomCenterPanel = useMemo(() => (
+    <Panel
+      position="bottom-center"
+      className="inline-flex -space-x-px rounded-md shadow-xs rtl:space-x-reverse"
+    >
+      <Button
+        variant="outline"
+        size="icon"
+        className="text-muted-foreground/80 hover:text-muted-foreground rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg w-fit h-10 p-4 focus-visible:z-10 bg-card"
+        onClick={handleOpenCreateTableModal}
+        aria-label="Create table"
+      >
+        <RiTableView className="size-7" aria-hidden="true" />
+        Create Table
+      </Button>
+      <Button
+        variant="outline"
+        size="icon"
+        className="text-muted-foreground/80 hover:text-muted-foreground rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg w-fit h-10 p-4 focus-visible:z-10 bg-card"
+        onClick={handleCreateNote}
+        aria-label="Create note"
+      >
+        <RiStickyNoteLine className="size-7" aria-hidden="true" />
+        Create Note
+      </Button>
+    </Panel>
+  ), [handleOpenCreateTableModal, handleCreateNote]);
 
   return (
     <main className="w-full h-full">
@@ -132,99 +272,51 @@ function SchemaVisualizerInner() {
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           fitView
-          minZoom={0.5}
-          maxZoom={1}
+          minZoom={0.1}
+          maxZoom={2}
           connectionMode={ConnectionMode.Strict}
-          snapToGrid={false}
-          snapGrid={[15, 15]}
+          snapToGrid={true}
+          snapGrid={[20, 20]}
           deleteKeyCode="Delete"
-          defaultEdgeOptions={{
-            type: "custom",
-            className: "opacity-25",
-          }}
-          style={
-            {
-              "--xy-background-pattern-dots-color-default":
-                "var(--color-border)",
-              "--xy-edge-stroke-width-default": 1.5,
-              "--xy-edge-stroke-default": "var(--color-foreground)",
-              "--xy-edge-stroke-selected-default": "var(--color-foreground)",
-              "--xy-attribution-background-color-default": "transparent",
-            } as React.CSSProperties
-          }
+          defaultEdgeOptions={defaultEdgeOptions}
+          style={reactFlowStyle}
           attributionPosition="bottom-left"
+          // Performance optimizations
+          onlyRenderVisibleElements
+          elevateNodesOnSelect={false}
+          zoomOnDoubleClick={false}
+          panOnDrag
+          selectNodesOnDrag={false}
+          // Node ve edge seçimi için performans optimizasyonu
+          multiSelectionKeyCode="Shift"
+          // Viewport optimizasyonları
+          translateExtent={[[-2000, -2000], [2000, 2000]]}
+          nodeExtent={[[-1500, -1500], [1500, 1500]]}
+          // Animation optimizasyonları
+          defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
+          // Connection line styling - performans için basit
+          connectionLineType={ConnectionLineType.Straight}
+          connectionLineStyle={{ strokeWidth: 2, stroke: '#94a3b8' }}
         >
-          <Background variant={BackgroundVariant.Dots} gap={20} size={2} />
-
-          <Panel
-            position="top-right"
-            className="inline-flex -space-x-px rounded-md shadow-xs rtl:space-x-reverse"
-          >
-
-            <ToggleGroup type="single">
-              <ToggleGroupItem value="a">Visual Editor</ToggleGroupItem>
-              <ToggleGroupItem value="c">SQL Editor</ToggleGroupItem>
-            </ToggleGroup>
-          </Panel>
-          <Panel
-            position="bottom-right"
-            className="inline-flex -space-x-px rounded-md shadow-xs rtl:space-x-reverse"
-          >
-
-            <Button
-              variant="outline"
-              size="icon"
-              className="text-muted-foreground/80 hover:text-muted-foreground rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg size-10 focus-visible:z-10 bg-card"
-              onClick={() => zoomIn()}
-              aria-label="Zoom in"
-            >
-              <ZoomIn className="size-5" aria-hidden="true" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="text-muted-foreground/80 hover:text-muted-foreground rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg size-10 focus-visible:z-10 bg-card"
-              onClick={() => zoomOut()}
-              aria-label="Zoom out"
-            >
-              <ZoomOut className="size-5" aria-hidden="true" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="text-muted-foreground/80 hover:text-muted-foreground rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg size-10 focus-visible:z-10 bg-card"
-              onClick={onFitView}
-              aria-label="Fit view"
-            >
-              <RiFullscreenLine className="size-5" aria-hidden="true" />
-            </Button>
-          </Panel>
-          <Panel
-            position="bottom-center"
-            className="inline-flex -space-x-px rounded-md shadow-xs rtl:space-x-reverse"
-          >
-
-            <Button
-              variant="outline"
-              size="icon"
-              className="text-muted-foreground/80 hover:text-muted-foreground rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg w-16 h-10 p-4 focus-visible:z-10 bg-card"
-              onClick={() => zoomIn()}
-              aria-label="Zoom in"
-            >
-              <RiTableView className="size-7" aria-hidden="true" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="text-muted-foreground/80 hover:text-muted-foreground rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg w-16 h-10 p-4 focus-visible:z-10 bg-card"
-              onClick={() => zoomOut()}
-              aria-label="Zoom out"
-            >
-              <RiStickyNoteLine className="size-7" aria-hidden="true" />
-            </Button>
-          </Panel>
+          <Background 
+            variant={BackgroundVariant.Dots} 
+            gap={20} 
+            size={2}
+            // Background performansı için
+            patternClassName="opacity-30"
+          />
+          {topRightPanel}
+          {bottomRightPanel}
+          {bottomCenterPanel}
         </ReactFlow>
       </div>
+
+      {/* Create Table Modal */}
+      <CreateTableModal
+        isOpen={isCreateTableModalOpen}
+        onClose={handleCloseCreateTableModal}
+        onSubmit={handleCreateTable}
+      />
     </main>
   );
 }

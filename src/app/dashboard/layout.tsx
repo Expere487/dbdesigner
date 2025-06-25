@@ -4,6 +4,7 @@ import "@/app/globals.css";
 import Header from "@/components/header";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { QueryProvider } from "@/components/providers/QueryProvider";
 
 const fontSans = Inter({
   subsets: ["latin"],
@@ -32,15 +33,17 @@ export default async function DashboardLayout({
       <body
         className={`${fontSans.variable} ${fontMono.variable} font-sans antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <Header />
-          {children}
-        </ThemeProvider>
+        <QueryProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="light"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <Header />
+            {children}
+          </ThemeProvider>
+        </QueryProvider>
       </body>
     </html>
   );

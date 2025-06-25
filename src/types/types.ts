@@ -131,3 +131,38 @@ export interface TableNode extends Node {
         fields: Field[];
     },
 }
+
+export type Project = {
+    created_at: string;
+    db_type: string;
+    description: string;
+    id: string;
+    name: string;
+    project_type: string;
+    updated_at: string;
+    user_id: string;
+}
+
+export type ProjectTables = {
+    id: string;
+    project_id: string;
+    name: string;
+    pos_x: number;
+    pos_y: number;
+    created_at: string;
+}
+
+export type ProjectTableFields = {
+    id: string;
+    table_id: string;
+    name: string;
+    data_type: string;
+    length: number;
+    nullable: boolean;
+    is_primary: boolean;
+    is_foreign: boolean;
+    is_unique: boolean;
+    is_nullable: boolean;
+    default_value: string;
+    comment?: string;
+}

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
     const { name, description, databaseType,user_id} = await request.json()
+    console.log(name, description, databaseType,user_id)
     const supabase = createClient()
     const { data, error } = await supabase.from('projects').insert({
         name,

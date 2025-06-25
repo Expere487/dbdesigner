@@ -9,18 +9,12 @@ import { toast, Toaster } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { getUser } from '@/lib/supabase/auth/action'
 
-export default function NewProject({ onClose }: { onClose: () => void }) {
+export default function NewProject({ onClose, user }: { onClose: () => void, user: any }) {
+    console.log(user , "user")
     const [isLoading, setIsLoading] = useState(false)
-    const [user, setUser] = useState(null) 
-    useEffect(() => {
-        getUser().then(user => {
-            setUser(user)
-        })
-    }, [])
-    console.log(user)
     const [formData, setFormData] = useState({
         name: '',
-        user_id: user?.id,
+        user_id: user.id,
         description: '',
         type: 'blank' as 'blank' | 'template' | 'import',
         databaseType: 'mysql' as 'mysql' | 'postgresql' | 'sqlite',
@@ -29,6 +23,7 @@ export default function NewProject({ onClose }: { onClose: () => void }) {
     })
 
     const handleSubmit = async (e: React.FormEvent) => {
+        console.log(formData , "form data")
         e.preventDefault()
         setIsLoading(true)
         const response = await fetch('/api/project/create', {

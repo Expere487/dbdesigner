@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import {
   BaseEdge,
   EdgeProps,
@@ -5,7 +6,7 @@ import {
   Position,
 } from "@xyflow/react";
 
-export default function SchemaEdge({
+function SchemaEdge({
   sourceX,
   sourceY,
   targetX,
@@ -15,15 +16,21 @@ export default function SchemaEdge({
   style = {},
   markerEnd,
 }: EdgeProps) {
-  const [edgePath] = getSmoothStepPath({
-    sourceX,
-    sourceY,
-    sourcePosition: sourcePosition || Position.Bottom,
-    targetX,
-    targetY,
-    targetPosition: targetPosition || Position.Top,
-    borderRadius: 8, // Increased border radius for smoother corners
-  });
+  // Memoized path calculation - only recalculate when positions change
+  const edgePath = useMemo(() => {
+    const [path] = getSmoothStepPath({
+      sourceX,
+      sourceY,
+      sourcePosition: sourcePosition || Position.Bottom,
+      targetX,
+      targetY,
+      targetPosition: targetPosition || Position.Top,
+      borderRadius: 8, // Increased border radius for smoother corners
+    });
+    return path;
+  }, [sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition]);
 
   return <BaseEdge path={edgePath} style={style} markerEnd={markerEnd} />;
 }
+
+export default memo(SchemaEdge);
