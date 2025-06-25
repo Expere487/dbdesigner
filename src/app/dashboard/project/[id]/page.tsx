@@ -12,7 +12,7 @@ export default async function Page({ params }: { params: { id: string } }) {
   console.log(project)
   return (
     <div className="h-[calc(100svh-3rem)] md:h-[calc(100svh-4rem)] overflow-hidden">
-      <SchemaVisualizer />
+      <SchemaVisualizer  />
     </div>
   );
 }

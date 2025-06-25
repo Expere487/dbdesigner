@@ -17,15 +17,17 @@ import {
   ConnectionLineType,
 } from "@xyflow/react";
 import "@xyflow/react/dist/base.css";
-import { RiAddLine, RiSubtractLine, RiFullscreenLine, RiTableView, RiStickyNoteLine } from "@remixicon/react";
+import { RiAddLine, RiSubtractLine, RiFullscreenLine, RiTableView, RiStickyNoteLine, RiSaveLine } from "@remixicon/react";
 import { Button } from "@/components/button";
 import TableNode from "@/components/table-node";
 import SchemaEdge from "@/components/schema-edge";
 import CreateTableModal from "@/components/modals/CreateTableModal";
 import { initialNodes, initialEdges } from "@/lib/schema-data";
-import { Plus, ZoomIn, ZoomOut } from "lucide-react";
+import { Plus, Save, ZoomIn, ZoomOut } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { TableNode as TableNodeType, Field } from "@/types/types";
+import { useModal } from "@/hooks/use-modal";
+import NewTable from "./forms/NewTable";
 
 // Register custom node types and edge types - Memoized
 const nodeTypes = {
@@ -58,6 +60,8 @@ const connectionValidationOptions = {
 };
 
 function SchemaVisualizerInner() {
+  const { openModal, closeModal } = useModal()
+  const [saveLoading, setSaveLoading] = useState(true)
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [activeEditor, setActiveEditor] = useState<"visual" | "sql">("visual");
@@ -141,38 +145,28 @@ function SchemaVisualizerInner() {
     );
   }, [edges]);
 
-  // Modal açma fonksiyonu
-  const handleOpenCreateTableModal = useCallback(() => {
-    setIsCreateTableModalOpen(true);
-  }, []);
-
-  // Modal kapatma fonksiyonu
-  const handleCloseCreateTableModal = useCallback(() => {
-    setIsCreateTableModalOpen(false);
-  }, []);
-
   // Yeni tablo oluşturma fonksiyonu - Modal'dan çağrılacak
   const handleCreateTable = useCallback((tableName: string, fields: Field[]) => {
     const tableId = `table-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     // Canvas merkezinde oluştur
     const viewport = reactFlowWrapper.current?.getBoundingClientRect();
     const centerX = viewport ? viewport.width / 2 : 300;
     const centerY = viewport ? viewport.height / 2 : 200;
-    
+
     const newTable: TableNodeType = {
       id: tableId,
       type: "tableNode",
-      position: { 
+      position: {
         x: centerX + (Math.random() - 0.5) * 200, // Merkez etrafında rastgele
-        y: centerY + (Math.random() - 0.5) * 200 
+        y: centerY + (Math.random() - 0.5) * 200
       },
       data: {
         label: tableName,
         fields: fields,
       },
     };
-    
+
     setNodes((prev) => [...prev, newTable]);
     setIsCreateTableModalOpen(false);
   }, [setNodes]);
@@ -240,7 +234,7 @@ function SchemaVisualizerInner() {
         variant="outline"
         size="icon"
         className="text-muted-foreground/80 hover:text-muted-foreground rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg w-fit h-10 p-4 focus-visible:z-10 bg-card"
-        onClick={handleOpenCreateTableModal}
+        onClick={() => openModal("Yeni Tablo", <NewTable onSubmit={handleCreateTable} onClose={closeModal} />, { contentClassName: '!w-[1200px] !max-w-none' })}
         aria-label="Create table"
       >
         <RiTableView className="size-7" aria-hidden="true" />
@@ -257,7 +251,7 @@ function SchemaVisualizerInner() {
         Create Note
       </Button>
     </Panel>
-  ), [handleOpenCreateTableModal, handleCreateNote]);
+  ), [handleCreateNote]);
 
   return (
     <main className="w-full h-full">
@@ -298,13 +292,18 @@ function SchemaVisualizerInner() {
           connectionLineType={ConnectionLineType.Straight}
           connectionLineStyle={{ strokeWidth: 2, stroke: '#94a3b8' }}
         >
-          <Background 
-            variant={BackgroundVariant.Dots} 
-            gap={20} 
+          <Background
+            variant={BackgroundVariant.Dots}
+            gap={20}
             size={2}
             // Background performansı için
             patternClassName="opacity-30"
           />
+          {saveLoading && (
+            <div className="absolute top-0 left-0 w-[100px] h-[50px] bg-red-500 flex items-center justify-center gap-2">
+              <Save className="size-7 animate-spin" aria-hidden="true" />
+            </div>
+          )}
           {topRightPanel}
           {bottomRightPanel}
           {bottomCenterPanel}
@@ -312,11 +311,7 @@ function SchemaVisualizerInner() {
       </div>
 
       {/* Create Table Modal */}
-      <CreateTableModal
-        isOpen={isCreateTableModalOpen}
-        onClose={handleCloseCreateTableModal}
-        onSubmit={handleCreateTable}
-      />
+
     </main>
   );
 }

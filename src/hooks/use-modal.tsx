@@ -13,6 +13,7 @@ interface ModalContextType {
 interface ModalOptions {
   size?: 'sm' | 'md' | 'lg' | 'xl'
   closable?: boolean
+  contentClassName?: string 
 }
 
 interface ModalState {
@@ -74,7 +75,7 @@ export function ModalProvider({ children }: ModalProviderProps) {
       {/* Universal Modal Renderer */}
       {modal && (
         <Dialog open={true} onOpenChange={(open) => !open && closeModal()}>
-          <DialogContent className={`min-w-2xl`}>
+          <DialogContent className={`min-w-2xl ${modal.options.contentClassName}`}>
             {modal.options.closable !== false && (
               <DialogClose onClose={closeModal} />
             )}
