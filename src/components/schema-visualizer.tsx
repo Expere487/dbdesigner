@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState, useMemo } from "react";
+import { useCallback, useRef, useState, useMemo, useEffect } from "react";
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -28,6 +28,8 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { TableNode as TableNodeType, Field } from "@/types/types";
 import { useModal } from "@/hooks/use-modal";
 import NewTable from "./forms/NewTable";
+import { createTable, getTables } from "@/lib/functions/backend";
+import { useParams } from "next/navigation";
 
 // Register custom node types and edge types - Memoized
 const nodeTypes = {
@@ -61,14 +63,21 @@ const connectionValidationOptions = {
 
 function SchemaVisualizerInner() {
   const { openModal, closeModal } = useModal()
-  const [saveLoading, setSaveLoading] = useState(true)
+  const [saveLoading, setSaveLoading] = useState(false)
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [activeEditor, setActiveEditor] = useState<"visual" | "sql">("visual");
   const [isCreateTableModalOpen, setIsCreateTableModalOpen] = useState(false);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { fitView, zoomIn, zoomOut } = useReactFlow();
+  const params = useParams();
+  const [tables, setTables] = useState<TableNodeType[]>([]);
 
+  useEffect(() => {
+    getTables(params?.id as string).then((tables) => {
+      setNodes(tables as TableNodeType[]);
+    });
+  }, [params?.id,setNodes,setEdges]);
   // Fit view fonksiyonu - Memoized
   const onFitView = useCallback(() => {
     fitView({ padding: 0.2, duration: 800 });
@@ -146,29 +155,47 @@ function SchemaVisualizerInner() {
   }, [edges]);
 
   // Yeni tablo oluşturma fonksiyonu - Modal'dan çağrılacak
-  const handleCreateTable = useCallback((tableName: string, fields: Field[]) => {
-    const tableId = `table-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const handleCreateTable = useCallback(async (tableName: string, fields: Field[]) => {
+    setSaveLoading(true)
+    try {
+      const tableId = `table-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    // Canvas merkezinde oluştur
-    const viewport = reactFlowWrapper.current?.getBoundingClientRect();
-    const centerX = viewport ? viewport.width / 2 : 300;
-    const centerY = viewport ? viewport.height / 2 : 200;
+      // Canvas merkezinde oluştur
+      const viewport = reactFlowWrapper.current?.getBoundingClientRect();
+      const centerX = viewport ? viewport.width / 2 : 300;
+      const centerY = viewport ? viewport.height / 2 : 200;
+      const posX = Math.floor(centerX + (Math.random() - 0.5) * 200);
+      const posY = Math.floor(centerY + (Math.random() - 0.5) * 200);
 
-    const newTable: TableNodeType = {
-      id: tableId,
-      type: "tableNode",
-      position: {
-        x: centerX + (Math.random() - 0.5) * 200, // Merkez etrafında rastgele
-        y: centerY + (Math.random() - 0.5) * 200
-      },
-      data: {
-        label: tableName,
-        fields: fields,
-      },
-    };
+      // Önce veritabanına kaydet
+      const projectId = params?.id as string;
+      
+      const newTable: TableNodeType = {
+        id: tableId,
+        type: "tableNode",
+        position: {
+          x: posX,
+          y: posY
+        },
+        measured: { width: 230, height: 230 },
+        data: {
+          label: tableName,
+          fields: fields,
+        },
+      };
 
-    setNodes((prev) => [...prev, newTable]);
-    setIsCreateTableModalOpen(false);
+      setNodes((prev) => [...prev, newTable]);
+      setIsCreateTableModalOpen(false);
+      if (projectId) {
+        await createTable(projectId, tableName, posX, posY, fields);
+      }
+      setSaveLoading(false)
+      // Başarılı olursa node'u ekle
+    } catch (error) {
+      console.error('Tablo oluşturma hatası:', error);
+      // Hata durumunda kullanıcıya bilgi verilebilir
+      alert('Tablo oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.');
+    }
   }, [setNodes]);
 
   // Yeni not oluşturma fonksiyonu - Memoized
@@ -300,7 +327,7 @@ function SchemaVisualizerInner() {
             patternClassName="opacity-30"
           />
           {saveLoading && (
-            <div className="absolute top-0 left-0 w-[100px] h-[50px] bg-red-500 flex items-center justify-center gap-2">
+            <div className="absolute top-2 left-2 p-2 bg-background border border-border rounded-full flex items-center justify-center gap-2">
               <Save className="size-7 animate-spin" aria-hidden="true" />
             </div>
           )}
